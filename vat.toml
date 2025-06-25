@@ -1,0 +1,6 @@
+[package]
+name = "burnin-hou"
+version = "0.1.0"
+
+[env.HOUDINI_PATH]
+values = ["append:{root}"]
