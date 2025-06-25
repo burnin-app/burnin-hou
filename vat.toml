@@ -2,5 +2,11 @@
 name = "burnin-hou"
 version = "0.1.0"
 
-[env.HOUDINI_PATH]
+[env.macos.HOUDINI_PATH]
 values = ["append:{root}"]
+
+[env.linux.HOUDINI_PATH]
+values = ["append:{root}"]
+
+[env.windows.HOUDINI_PATH]
+values = ["append:{root};&"]
