@@ -3,7 +3,7 @@ name = "burnin-hou"
 version = "0.1.0"
 
 [env.macos.HOUDINI_PATH]
-values = ["append:{root}"]
+values = ["append:{root}:&"]
 
 [env.linux.HOUDINI_PATH]
 values = ["append:{root}"]
