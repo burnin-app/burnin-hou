@@ -10,3 +10,6 @@ values = ["append:{root}"]
 
 [env.windows.HOUDINI_PATH]
 values = ["append:{root};&"]
+
+[env.PYTHONPATH]
+values = ["{root}/script"]
