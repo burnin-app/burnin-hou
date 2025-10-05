@@ -71,7 +71,6 @@ def fileCache(kwargs):
             version_type.head_file = file_name_with_ext
             version_type.status = VersionStatus.Published
             node.parm("status").set("Incomplete")
-            print(version_type)
 
             ## update node type data : FileType
             file_type: FileType = version_type.file_type.data

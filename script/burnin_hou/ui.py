@@ -2,7 +2,7 @@ import hou
 from builtins import zip
 from burnin.api import BurninClient
 from pathlib import Path
-from burnin.entity.utils import parse_node_path
+from burnin.entity.utils import parse_node_path, os_slash
 from burnin.entity.surreal import Thing
 from burnin.entity.node import Node
 
@@ -49,7 +49,7 @@ def buildFilePath(kwargs, include_file_name: bool = False, component_path: str =
 
     component_path = parse_node_path(component_path)
 
-    if component_path.startswith('/'):
+    if component_path.startswith(os_slash()):
         component_path = component_path[1:]
     version_number = node.parm("version_number").evalAsString()
 
