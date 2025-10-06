@@ -24,20 +24,7 @@ def buildRootListMenu():
     menu = _buildMenuStringList(temp_names, add_prefix=False)
     return menu
 
-def buildComponentMenuList(kwargs):
-    burnin_client = BurninClient()
-    node = kwargs['node']
-    root_id = node.parm("root_id").evalAsString()
-    component_path = node.parm("component_path").evalAsString()
-    component_id = Thing.from_ids(root_id, component_path)
-    menu_list = ["Latest",  "Atop"]
-    try:
-        component_node = burnin_client.get_component_version_node(component_id)
-        version_list = component_node.get_segment_names()
-        menu_list.extend(version_list)
-    except Exception as e:
-        print(e)
-    return _buildMenuStringList(menu_list, add_prefix=False)
+
 
 def buildFilePath(kwargs, include_file_name: bool = False, component_path: str = None) -> Path:
     node = kwargs['node']
@@ -78,7 +65,7 @@ def buildDirPathFromVersionNode(kwargs, version_node: Node):
 
     version_node_path = version_node.get_node_id_str()
     version_node_path = parse_node_path(version_node_path)
-    if version_node_path.startswith('/'):
+    if version_node_path.startswith(os_slash()):
         version_node_path = version_node_path[1:]
     
     return root_path / version_node_path
