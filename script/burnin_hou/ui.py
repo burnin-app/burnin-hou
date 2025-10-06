@@ -2,7 +2,7 @@ import hou
 from builtins import zip
 from burnin.api import BurninClient
 from pathlib import Path
-from burnin.entity.utils import parse_node_path, os_slash
+from burnin.entity.utils import parse_node_path, os_slash, buildDirPathFromVersionNode
 from burnin.entity.surreal import Thing
 from burnin.entity.node import Node
 
@@ -57,16 +57,9 @@ def buildFilePath(kwargs, include_file_name: bool = False, component_path: str =
         return file_path
     
 
-def buildDirPathFromVersionNode(kwargs, version_node: Node):
+def buildDirPathFromVersionNodeHou(kwargs, version_node: Node):
     node = kwargs['node']
     root_path = node.parm("root_path").evalAsString()
     root_name = node.parm("root_name").evalAsString()
-    root_path = Path(root_path) / root_name
 
-    version_node_path = version_node.get_node_id_str()
-    version_node_path = parse_node_path(version_node_path)
-    if version_node_path.startswith(os_slash()):
-        version_node_path = version_node_path[1:]
-    
-    return root_path / version_node_path
-    
+    return buildDirPathFromVersionNode(version_node, root_path, root_name)

@@ -5,7 +5,7 @@ from burnin.entity.surreal import Thing
 from burnin.entity.node import Version, Node
 from burnin.entity.filetype import Geometry
 
-from burnin_hou.ui import buildDirPathFromVersionNode
+from burnin_hou.ui import buildDirPathFromVersionNodeHou
 from burnin_hou.ui import _buildMenuStringList
 
 def fetch_version_list(kwargs):
@@ -79,7 +79,7 @@ def fetch_version_node(kwargs, context="SOP"):
         if not version_node.node_type.variant_name == "Version":
             raise Exception(f"Invalid node type: {version_node.node_type.variant_name}")
 
-        node_file_path = buildDirPathFromVersionNode(kwargs, version_node)
+        node_file_path = buildDirPathFromVersionNodeHou(kwargs, version_node)
         node.parm("dir_path").lock(0)
         node.parm("dir_path").set(str(node_file_path))
         node.parm("dir_path").lock(1)
