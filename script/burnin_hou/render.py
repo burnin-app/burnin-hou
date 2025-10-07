@@ -1,5 +1,4 @@
 import hou
-from pathlib import Path
 
 from burnin.api import BurninClient
 from burnin.entity.node import Node
