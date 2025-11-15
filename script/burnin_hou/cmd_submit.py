@@ -50,9 +50,9 @@ def burninSubmitRenderCmd(kwargs):
                 frame_range = [int(hou.frame()), int(hou.frame()), 1]
             else:
                 file_name_with_ext = file_name + ".$F4.exr"
-                thumb_image_file_name_with_ext = file_name + "." + str(int(hou.parm("f1").eval())).zfill(4) + ".exr"
-                start_frame = hou.pram("f1").eval()
-                end_frame = hou.pram("f2").eval()
+                thumb_image_file_name_with_ext = file_name + "." + str(int(node.parm("f1").eval())).zfill(4) + ".exr"
+                start_frame = node.pram("f1").eval()
+                end_frame = node.pram("f2").eval()
                 frame_range = [int(start_frame), int(end_frame)]
 
 
@@ -74,26 +74,30 @@ def burninSubmitRenderCmd(kwargs):
             # hou.hipFile.save(file_name=str(setup_path), save_to_recent_files=False)
 
             rop_node_path = node.path() + "/usdrender_rop"
-            create_render_script(str(render_script_path), str(current_path), str(setup_path), component_id, rop_node_path)
+
+            # thumbnail render script
+            create_render_script(str(render_script_path), str(current_path), str(setup_path), component_id, node.path(), rop_node_path, [image_file_path, output_thumbnail_path])
 
             # create cmd
-            node_names = str(component_id.id.String).split("/")
+            node_names = str(version_node.id.id.String).split("/")
             job_names = []
-            for node in node_names:
-                if (":" in node):
-                    name = node.split(":")[-1]
+            for n in node_names:
+                if (":" in n):
+                    name = n.split(":")[-1]
                     job_names.append(name)
                 
             job_name = "_".join(job_names) 
+
             if trange != "off":
                 output_file_path = file_name_with_ext.replace("$F4", "####")
             else:
                 output_file_path = file_name_with_ext
+            
 
             cmd = CmdSubmit.new(
                 name=job_name,
                 shell="hython",
-                component_id=component_id,
+                component_id=version_node.id,
                 cwd=None,
                 env={},
                 args=[
@@ -107,17 +111,55 @@ def burninSubmitRenderCmd(kwargs):
 
             burnin_client.cmd_submit(cmd)
 
+            # update node type data : Version
+            version_type: Version = version_node.node_type.data
+            version_type.comment = node.parm("comment").evalAsString()
+            version_type.software = "houdini"
+            version_type.status = VersionStatus.Published
+
+            ## update node type data : FileTYpe
+            file_type: FileType = version_type.file_type.data
+            file_type.file_name = file_name
+            file_type.file_format = ".exr"
+
+            if trange != "off":
+                file_type.time_dependent = True
+                frame_range =  [hou.parm("f1").eval(), hou.parm("f2").eval(), hou.parm("f3").eval()]
+                file_type.frame_range = frame_range
+            
+            version_type.file_type = TypeWrapper(file_type)
+            version_node.node_type = TypeWrapper(version_type)
+            version_node.created_at = None
+
+            version_node = burnin_client.commit_component_version(version_node)
+            print(version_node)
+
 
     except Exception as e:
             hou.ui.displayMessage(f"An error occurred:\n{str(e)}", severity=hou.severityType.Error)#
 
 
-def create_render_script(render_script_path: str, src_hip_file: str, dst_hip_file: str, component_id: Thing, rop_path: str):
+def create_render_script(render_script_path: str, src_hip_file: str, dst_hip_file: str, version_id: Thing, node_path: str, rop_path: str, thumbnail_paths: list):
     """
     Creates a Python script at `output_path` that will load a given .hip file
     and render the specified ROP inside Houdini.
     """
 
+    thumbnail_content = f'''
+    # no thumbnail
+'''
+
+    print(thumbnail_paths)
+    if len(thumbnail_paths) == 2:
+        thumbnail_content = f'''
+from burnin.entity.media import FfmpegCMD
+from burnin.api import BurninClient
+
+ffmpeg_cmd = FfmpegCMD(r"{str(thumbnail_paths[0])}", r"{str(thumbnail_paths[1])}")
+burnin_client = BurninClient()
+burnin_client.generate_thumbnail_from_image(ffmpeg_cmd)
+
+'''
 
     script_content = f'''import hou
 hou.hipFile.load(r"{dst_hip_file}")
@@ -131,7 +173,11 @@ print(f"Rendering from frame {{f1}} to {{f2}}...")
 
 # Render (prints progress in hython)
 rop.render(verbose=True)
+
+# thumbnail script
+{thumbnail_content}
 '''
+
     # Ensure folder exists
     os.makedirs(os.path.dirname(render_script_path), exist_ok=True)
 

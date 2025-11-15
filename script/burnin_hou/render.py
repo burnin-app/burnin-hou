@@ -42,14 +42,18 @@ def burninUSDRenderROP(kwargs):
                 thumb_image_file_name_with_ext = file_name_with_ext
             else:
                 file_name_with_ext = file_name + ".$F4.exr"
-                thumb_image_file_name_with_ext = file_name + "." + str(int(hou.parm("f1").eval())).zfill(4) + ".exr"
+                thumb_image_file_name_with_ext = file_name + "." + str(int(node.parm("f1").eval())).zfill(4) + ".exr"
 
             full_path = file_path / file_name_with_ext
             image_file_path = file_path / thumb_image_file_name_with_ext
             output_thumbnail_path = file_path / "thumbnail.png"
 
             node.parm("outputimage").set(str(full_path))
-            node.parm("execute").pressButton()
+            rop_node_path = node.path() + "/usdrender_rop"
+            rop = hou.node(rop_node_path)
+            f1, f2 = rop.evalParm("f1"), rop.evalParm("f2")
+            print(f"Rendering from frame {f1} to {f2}...")
+            rop.render(verbose=True)
 
             ## update node type data : Version
             version_type: Version = version_node.node_type.data
