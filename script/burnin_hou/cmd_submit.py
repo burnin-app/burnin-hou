@@ -51,9 +51,9 @@ def burninSubmitRenderCmd(kwargs):
             else:
                 file_name_with_ext = file_name + ".$F4.exr"
                 thumb_image_file_name_with_ext = file_name + "." + str(int(node.parm("f1").eval())).zfill(4) + ".exr"
-                start_frame = node.pram("f1").eval()
-                end_frame = node.pram("f2").eval()
-                frame_range = [int(start_frame), int(end_frame)]
+                start_frame = node.parm("f1").eval()
+                end_frame = node.parm("f2").eval()
+                frame_range = [10, 10]
 
 
             full_path = file_path / file_name_with_ext
@@ -86,7 +86,11 @@ def burninSubmitRenderCmd(kwargs):
                     name = n.split(":")[-1]
                     job_names.append(name)
                 
+            if len(node_names) > 2:
+                job_names.append(node_names[-2])
+                job_names.append(node_names[-1])
             job_name = "_".join(job_names) 
+            
 
             if trange != "off":
                 output_file_path = file_name_with_ext.replace("$F4", "####")

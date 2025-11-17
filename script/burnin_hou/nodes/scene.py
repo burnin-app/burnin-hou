@@ -49,8 +49,29 @@ def build_shot(kwargs):
                     hou.playbar.setFrameRange(start_cache_frame, end_cache_frame)  
                     hou.setFrame(start_cache_frame)
 
+                    # update linked read nodes
+                    update_read_nodes(kwargs)
+
         except Exception as e:
             raise Exception(f"{e}")
 
     else:
         hou.ui.setStatusMessage(f"Invalid Shot Path: {shot_component_path}", severity=hou.severityType.Message)
+
+
+def update_read_nodes(kwargs):
+    node = kwargs['node']
+    read_nodes_count = node.parm("read_nodes").eval()
+    for i in range(read_nodes_count):
+        i_str = str(i + 1)
+        node_enabled = node.parm(f"node_enabled_{i_str}").eval()
+        if node_enabled:
+            node_path = node.parm(f"node_{i_str}").evalAsString()
+            if node_path:
+                read_node = hou.node(node_path)
+                # node type validation
+                node_type: str = read_node.type().name()
+                if node_type.startswith("sop::burnin_read") or node_type.startswith("burnin_read"):
+                    print("Updating node", node_path)
+                    read_node.parm("fetch").pressButton()
+
