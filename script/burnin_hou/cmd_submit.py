@@ -1,25 +1,25 @@
-from burnin.api import BurninClient
-from burnin.entity.node import Node
-from burnin.entity.surreal import Thing
-from burnin.entity.version import Version, VersionStatus
-from burnin.entity.filetype import FileType
-from burnin.entity.utils import TypeWrapper
-from burnin.entity.media import FfmpegCMD
-from burnin_hou.ui import buildFilePath
-from burnin.entity.queue import CmdSubmit
-import hou
 import os
 import shutil
 
+import hou
+from burnin.api import BurninClient
+from burnin.entity.filetype import FileType
+from burnin.entity.media import FfmpegCMD
+from burnin.entity.node import Node
+from burnin.entity.queue import CmdSubmit
+from burnin.entity.surreal import Thing
+from burnin.entity.utils import TypeWrapper
+from burnin.entity.version import Version, VersionStatus
 
+from burnin_hou.ui import buildFilePath
 
 
 def burninSubmitRenderCmd(kwargs):
-    '''
+    """
     On Burnin USD Render ROP
-    '''
+    """
 
-    node = kwargs['node']
+    node = kwargs["node"]
     root_id = node.parm("root_id").evalAsString()
     component_path = node.parm("component_path").evalAsString()
     component_id: Thing = Thing.from_ids(root_id, component_path + "/v000")
@@ -28,7 +28,9 @@ def burninSubmitRenderCmd(kwargs):
     burnin_client = BurninClient()
 
     try:
-        version_node: Node = burnin_client.create_or_update_component_version(version_node)
+        version_node: Node = burnin_client.create_or_update_component_version(
+            version_node
+        )
         if version_node:
             version_node_id = version_node.get_node_id_str()
             version_number = version_node_id.split("/")[-1]
@@ -50,11 +52,12 @@ def burninSubmitRenderCmd(kwargs):
                 frame_range = [int(hou.frame()), int(hou.frame()), 1]
             else:
                 file_name_with_ext = file_name + ".$F4.exr"
-                thumb_image_file_name_with_ext = file_name + "." + str(int(node.parm("f1").eval())).zfill(4) + ".exr"
+                thumb_image_file_name_with_ext = (
+                    file_name + "." + str(int(node.parm("f1").eval())).zfill(4) + ".exr"
+                )
                 start_frame = node.parm("f1").eval()
                 end_frame = node.parm("f2").eval()
                 frame_range = [10, 10]
-
 
             full_path = file_path / file_name_with_ext
 
@@ -68,7 +71,7 @@ def burninSubmitRenderCmd(kwargs):
             hip_file_ext = current_path.split(".")[-1]
             setup_file_name = file_name + "_render_setup." + hip_file_ext
             setup_path = file_path / setup_file_name
-            render_script_name = file_name + "_render_script.py" 
+            render_script_name = file_name + "_render_script.py"
             render_script_path = file_path / render_script_name
 
             # hou.hipFile.save(file_name=str(setup_path), save_to_recent_files=False)
@@ -76,27 +79,33 @@ def burninSubmitRenderCmd(kwargs):
             rop_node_path = node.path() + "/usdrender_rop"
 
             # thumbnail render script
-            create_render_script(str(render_script_path), str(current_path), str(setup_path), component_id, node.path(), rop_node_path, [image_file_path, output_thumbnail_path])
+            create_render_script(
+                str(render_script_path),
+                str(current_path),
+                str(setup_path),
+                component_id,
+                node.path(),
+                rop_node_path,
+                [image_file_path, output_thumbnail_path],
+            )
 
             # create cmd
             node_names = str(version_node.id.id.String).split("/")
             job_names = []
             for n in node_names:
-                if (":" in n):
+                if ":" in n:
                     name = n.split(":")[-1]
                     job_names.append(name)
-                
+
             if len(node_names) > 2:
                 job_names.append(node_names[-2])
                 job_names.append(node_names[-1])
-            job_name = "_".join(job_names) 
-            
+            job_name = "_".join(job_names)
 
             if trange != "off":
                 output_file_path = file_name_with_ext.replace("$F4", "####")
             else:
                 output_file_path = file_name_with_ext
-            
 
             cmd = CmdSubmit.new(
                 name=job_name,
@@ -104,13 +113,13 @@ def burninSubmitRenderCmd(kwargs):
                 component_id=version_node.id,
                 cwd=None,
                 env={},
-                args=[
-                    str(render_script_path)
-                ],
+                args=[str(render_script_path)],
                 stack=os.getenv("BU_STACK"),
                 frame_range=frame_range,
-                user_id = None,
-                output_path=str(output_file_path)
+                user_id=None,
+                output_path=str(output_file_path),
+                comment=None,
+                dcc="houdini",
             )
 
             burnin_client.cmd_submit(cmd)
@@ -128,9 +137,13 @@ def burninSubmitRenderCmd(kwargs):
 
             if trange != "off":
                 file_type.time_dependent = True
-                frame_range =  [hou.parm("f1").eval(), hou.parm("f2").eval(), hou.parm("f3").eval()]
+                frame_range = [
+                    hou.parm("f1").eval(),
+                    hou.parm("f2").eval(),
+                    hou.parm("f3").eval(),
+                ]
                 file_type.frame_range = frame_range
-            
+
             version_type.file_type = TypeWrapper(file_type)
             version_node.node_type = TypeWrapper(version_type)
             version_node.created_at = None
@@ -138,20 +151,29 @@ def burninSubmitRenderCmd(kwargs):
             version_node = burnin_client.commit_component_version(version_node)
             print(version_node)
 
-
     except Exception as e:
-            hou.ui.displayMessage(f"An error occurred:\n{str(e)}", severity=hou.severityType.Error)#
+        hou.ui.displayMessage(
+            f"An error occurred:\n{str(e)}", severity=hou.severityType.Error
+        )  #
 
 
-def create_render_script(render_script_path: str, src_hip_file: str, dst_hip_file: str, version_id: Thing, node_path: str, rop_path: str, thumbnail_paths: list):
+def create_render_script(
+    render_script_path: str,
+    src_hip_file: str,
+    dst_hip_file: str,
+    version_id: Thing,
+    node_path: str,
+    rop_path: str,
+    thumbnail_paths: list,
+):
     """
     Creates a Python script at `output_path` that will load a given .hip file
     and render the specified ROP inside Houdini.
     """
 
-    thumbnail_content = f'''
+    thumbnail_content = f"""
     # no thumbnail
-'''
+"""
 
     print(thumbnail_paths)
     if len(thumbnail_paths) == 2:
