@@ -1,16 +1,19 @@
 import hou
-
 from burnin.api import BurninClient
-from burnin.entity.surreal import Thing
-from burnin.entity.node import Version, Node
 from burnin.entity.filetype import Geometry
+from burnin.entity.node import Node, Version
+from burnin.entity.surreal import Thing
 
-from burnin_hou.ui import buildDirPathFromVersionNodeHou
-from burnin_hou.ui import _buildMenuStringList
+from burnin_hou.ui import (
+    _buildMenuStringList,
+    buildDirPathFromVersionNodeHou,
+    buildFilePathFromNode,
+)
+
 
 def fetch_version_list(kwargs):
     burnin_client = BurninClient()
-    node = kwargs['node']
+    node = kwargs["node"]
     root_id = node.parm("root_id").evalAsString()
     component_path = node.parm("component_path").evalAsString()
     component_id = Thing.from_ids(root_id, component_path)
@@ -25,8 +28,9 @@ def fetch_version_list(kwargs):
     menu_list.reverse()
     return _buildMenuStringList(menu_list, add_prefix=False)
 
+
 def fetch_version_node(kwargs, context="SOP"):
-    node = kwargs['node']
+    node = kwargs["node"]
     root_id = node.parm("root_id").evalAsString()
     component_path = node.parm("component_path").evalAsString()
     if component_path.endswith("/"):
@@ -45,10 +49,9 @@ def fetch_version_node(kwargs, context="SOP"):
     node.parm("errormsg1").lock(0)
     node.parm("errormsg1").set("")
 
-
     try:
         burnin_client = BurninClient()
-        version_node: Node 
+        version_node: Node
         try:
             version_node = burnin_client.get_version_node(component_id)
         except Exception as e:
@@ -79,7 +82,7 @@ def fetch_version_node(kwargs, context="SOP"):
         if not version_node.node_type.variant_name == "Version":
             raise Exception(f"Invalid node type: {version_node.node_type.variant_name}")
 
-        node_file_path = buildDirPathFromVersionNodeHou(kwargs, version_node)
+        node_file_path = buildFilePathFromNode(kwargs, version_node)
         node.parm("dir_path").lock(0)
         node.parm("dir_path").set(str(node_file_path))
         node.parm("dir_path").lock(1)
@@ -88,10 +91,12 @@ def fetch_version_node(kwargs, context="SOP"):
         if not node_type.file_type.variant_name == "Geometry":
             node.parm("error_switch").set(1)
             node.parm("error_switch").lock(1)
-            node.parm("errormsg1").set(f"Invalid file type: {node_type.file_type.variant_name}")
+            node.parm("errormsg1").set(
+                f"Invalid file type: {node_type.file_type.variant_name}"
+            )
             node.parm("errormsg1").lock(1)
             raise Exception(f"Invalid file type: {node_type.file_type.variant_name}")
-        
+
         ## set comment and status
         if node_type.comment:
             node.parm("comment").lock(0)
@@ -123,7 +128,9 @@ def fetch_version_node(kwargs, context="SOP"):
             else:
                 node.parm("error_switch").set(1)
                 node.parm("error_switch").lock(1)
-                node.parm("errormsg1").set(f"Invalid File Type: Cannot read {file_type_str} file")
+                node.parm("errormsg1").set(
+                    f"Invalid File Type: Cannot read {file_type_str} file"
+                )
                 node.parm("errormsg1").lock(1)
                 raise Exception(f"Invalid file type: {file_type_str}")
 
@@ -141,21 +148,23 @@ def fetch_version_node(kwargs, context="SOP"):
                 node.parm("f2").lock(0)
                 node.parm("f2").set(frame_range[1])
                 node.parm("f2").lock(1)
-                node.parm('f3').lock(0)
-                node.parm('f3').set(frame_range[2])
-                node.parm('f3').lock(1)
+                node.parm("f3").lock(0)
+                node.parm("f3").set(frame_range[2])
+                node.parm("f3").lock(1)
 
                 # substeps
                 node.parm("substeps").lock(0)
                 node.parm("substeps").set(file_type.substeps)
                 node.parm("substeps").lock(1)
-        
+
         if context == "LOP":
             file_type_str = file_type.file_format
             if file_type_str not in [".usd", ".usdc", ".usda", ".usdz"]:
                 node.parm("error_switch").set(1)
                 node.parm("error_switch").lock(1)
-                node.parm("errormsg1").set(f"Invalid File Type: Cannot read {file_type_str} file")
+                node.parm("errormsg1").set(
+                    f"Invalid File Type: Cannot read {file_type_str} file"
+                )
                 node.parm("errormsg1").lock(1)
                 raise Exception(f"Invalid file type: {file_type_str}")
 
@@ -163,8 +172,6 @@ def fetch_version_node(kwargs, context="SOP"):
             node.parm("file_name").lock(0)
             node.parm("file_name").set(file_name)
             node.parm("file_name").lock(1)
-
-
 
     except Exception as e:
         print(e)

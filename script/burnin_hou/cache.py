@@ -1,47 +1,50 @@
-import hou
+import os
 from pathlib import Path
 
+import hou
 from burnin.api import BurninClient
+from burnin.entity.filetype import FileType
 from burnin.entity.node import Node
 from burnin.entity.surreal import Thing
+from burnin.entity.utils import TypeWrapper, os_slash
 from burnin.entity.version import Version, VersionStatus
-from burnin.entity.filetype import FileType
-from burnin.entity.utils import TypeWrapper
-from burnin.entity.utils import os_slash
 
 from burnin_hou.thumbnail import thumbnail_path
-from burnin_hou.ui import buildFilePath
-import os
+from burnin_hou.ui import buildFilePath, buildFilePathFromNode
+
 
 def fileCache(kwargs):
-    '''
+    """
     Component cache node
-    '''
-    node = kwargs['node']
+    """
+    node = kwargs["node"]
     node_path = Path(node.path())
-    component_path = node.parm('component_path').evalAsString()
+    component_path = node.parm("component_path").evalAsString()
     root_id = node.parm("root_id").evalAsString()
     component_id = Thing.from_ids(root_id, component_path + "/v000")
     version_node = Node.new_version(component_id, FileType.Geometry)
     burnin_client = BurninClient()
 
     try:
-        version_node: Node = burnin_client.create_or_update_component_version(version_node)
+        version_node: Node = burnin_client.create_or_update_component_version(
+            version_node
+        )
         if version_node:
             version_node_id = version_node.get_node_id_str()
             version_number = version_node_id.split("/")[-1]
             node.parm("version_number").lock(0)
             node.parm("version_number").set(version_number)
             node.parm("version_number").lock(1)
-            
-            file_path = buildFilePath(kwargs, include_file_name=False)
+
+            file_path = buildFilePathFromNode(
+                kwargs, version_node, include_file_name=True, include_file_ext=False
+            )
             node.parm("dir_path").lock(0)
             node.parm("dir_path").set(str(file_path))
             node.parm("dir_path").lock(1)
 
             # version status
             node.parm("status").set(VersionStatus.Incomplete.value)
-
 
             ## save data to disk
             file_type = node.parm("file_type").evalAsString()
@@ -50,7 +53,7 @@ def fileCache(kwargs):
                 cache_node_path = node_path / "filecache"
                 cache_node_path = str(cache_node_path).replace(os_slash(), "/")
                 cache_node = hou.node(cache_node_path)
-            
+
             if cache_node:
                 cache_node.parm("execute").pressButton()
 
@@ -72,7 +75,11 @@ def fileCache(kwargs):
             file_type.file_name = file_name
             file_type.time_dependent = hou.parm("timedependent").eval() == 1
             if file_type.time_dependent:
-                frame_range =  [hou.parm("f1").eval(), hou.parm("f2").eval(), hou.parm("f3").eval()]
+                frame_range = [
+                    hou.parm("f1").eval(),
+                    hou.parm("f2").eval(),
+                    hou.parm("f3").eval(),
+                ]
                 file_type.frame_range = frame_range
                 file_type.substeps = hou.parm("substeps").eval()
             file_type.file_format = node.parm("file_type").evalAsString()
@@ -91,8 +98,13 @@ def fileCache(kwargs):
 
             if node.parm("thumbnail").eval() == 1:
                 hou.parm("update_thumbnail").pressButton()
-            
-            hou.ui.setStatusMessage(f"File cache completed: {version_node_id}", severity=hou.severityType.Message)
+
+            hou.ui.setStatusMessage(
+                f"File cache completed: {version_node_id}",
+                severity=hou.severityType.Message,
+            )
 
     except Exception as e:
-        hou.ui.displayMessage(f"An error occurred:\n{str(e)}", severity=hou.severityType.Error)
+        hou.ui.displayMessage(
+            f"An error occurred:\n{str(e)}", severity=hou.severityType.Error
+        )

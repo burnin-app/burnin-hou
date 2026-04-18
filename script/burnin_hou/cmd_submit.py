@@ -120,6 +120,7 @@ def burninSubmitRenderCmd(kwargs):
                 output_path=str(output_file_path),
                 comment=None,
                 dcc="houdini",
+                root_id={},
             )
 
             burnin_client.cmd_submit(cmd)
