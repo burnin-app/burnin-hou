@@ -10,7 +10,7 @@ from burnin.entity.utils import TypeWrapper, os_slash
 from burnin.entity.version import Version, VersionStatus
 
 from burnin_hou.thumbnail import thumbnail_path
-from burnin_hou.ui import buildFilePath, buildFilePathFromNode
+from burnin_hou.ui import buildFilePathFromNode
 
 
 def fileCache(kwargs):

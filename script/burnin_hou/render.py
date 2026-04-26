@@ -4,7 +4,7 @@ from burnin.entity.filetype import FileType
 from burnin.entity.media import FfmpegCMD
 from burnin.entity.node import Node
 from burnin.entity.surreal import Thing
-from burnin.entity.utils import TypeWrapper
+from burnin.entity.utils import TypeWrapper, node_name_from_component_path
 from burnin.entity.version import Version, VersionStatus
 
 from burnin_hou.ui import buildFilePath, buildFilePathFromNode
@@ -41,7 +41,7 @@ def burninUSDRenderROP(kwargs):
             node.parm("status").set(VersionStatus.Incomplete.value)
 
             trange = node.parm("trange").evalAsString()
-            file_name = component_path.split("/")[-1] + "_" + version_number
+            file_name = node_name_from_component_path(version_node.id.id.String)
             if trange == "off":
                 file_name_with_ext = file_name + ".exr"
                 thumb_image_file_name_with_ext = file_name_with_ext

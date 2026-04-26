@@ -8,10 +8,10 @@ from burnin.entity.media import FfmpegCMD
 from burnin.entity.node import Node
 from burnin.entity.queue import CmdSubmit
 from burnin.entity.surreal import Thing
-from burnin.entity.utils import TypeWrapper
+from burnin.entity.utils import TypeWrapper, node_name_from_component_path
 from burnin.entity.version import Version, VersionStatus
 
-from burnin_hou.ui import buildFilePath
+from burnin_hou.ui import buildFilePathFromNode
 
 
 def burninSubmitRenderCmd(kwargs):
@@ -38,13 +38,13 @@ def burninSubmitRenderCmd(kwargs):
             node.parm("version_number").set(version_number)
             node.parm("version_number").lock(1)
 
-            file_path = buildFilePath(kwargs, include_file_name=False)
+            file_path = buildFilePathFromNode(kwargs, version_node,  include_file_name=False, include_file_ext=False)
 
             # version status
             node.parm("status").set(VersionStatus.Incomplete.value)
 
             trange = node.parm("trange").evalAsString()
-            file_name = component_path.split("/")[-1] + "_" + version_number
+            file_name = node_name_from_component_path(version_node.id.id.String)
             frame_range = []
             if trange == "off":
                 file_name_with_ext = file_name + ".exr"
